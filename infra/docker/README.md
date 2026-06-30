@@ -1,6 +1,6 @@
 # Docker
 
-Os Dockerfiles ficam dentro de cada servico para manter o monorepo simples.
+Os Dockerfiles ficam dentro de cada serviço para manter o monorepo simples.
 
 O arquivo `docker-compose.yml` da raiz sobe:
 

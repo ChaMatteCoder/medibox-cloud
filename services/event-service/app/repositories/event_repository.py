@@ -25,3 +25,7 @@ class EventRepository:
             .order_by(DeviceEvent.occurred_at.desc())
         )
         return list(self.db.scalars(statement).all())
+
+    def count_by_patient(self, patient_id: str) -> list[DeviceEvent]:
+        statement = select(DeviceEvent).where(DeviceEvent.patient_id == patient_id)
+        return list(self.db.scalars(statement).all())

@@ -1,10 +1,10 @@
 # MediBox Cloud
 
-MediBox Cloud e uma base backend academica para controle inteligente de medicamentos. O projeto simula uma caixa inteligente capaz de enviar eventos para a nuvem, enquanto cuidadores cadastram pacientes, medicamentos e horarios de uso.
+MediBox Cloud é uma base backend acadêmica para controle inteligente de medicamentos. O projeto simula uma caixa inteligente capaz de enviar eventos para a nuvem, enquanto cuidadores cadastram pacientes, medicamentos e horários de uso.
 
-O foco e demonstrar uma arquitetura backend simples, modular e explicavel usando Python, FastAPI, PostgreSQL, SQLAlchemy, Alembic, JWT, RabbitMQ, Docker Compose, NGINX e uma base inicial para Kubernetes.
+O foco é demonstrar uma arquitetura backend simples, modular e explicável usando Python, FastAPI, PostgreSQL, SQLAlchemy, Alembic, JWT, RabbitMQ, Docker Compose, NGINX e uma base inicial para Kubernetes.
 
-Esta base evita funcionalidades fora do escopo para manter o projeto legivel em uma apresentacao de Arquitetura de Software Aplicada.
+Esta base evita funcionalidades fora do escopo para manter o projeto legível em uma apresentação de Arquitetura de Software Aplicada.
 
 ## Arquitetura
 
@@ -25,36 +25,38 @@ medibox-cloud/
   README.md
 ```
 
-## Servicos
+## Serviços
 
 `auth-service`
 
-- Cadastro de usuario.
+- Cadastro de usuário.
 - Login com JWT.
 - Endpoint `/auth/me`.
-- Papeis: `ADMIN`, `CAREGIVER`, `PATIENT`.
+- Papéis: `ADMIN`, `CAREGIVER`, `PATIENT`.
 - Camadas internas: routes, schemas, models, repositories e services.
 
 `medication-service`
 
 - Cadastro e consulta de pacientes.
 - Cadastro e consulta de medicamentos.
-- Cadastro e consulta de horarios por paciente.
-- Regras de aplicacao concentradas em services, nao nas rotas.
+- Cadastro e consulta de horários por paciente.
+- Regras de aplicação concentradas em services, não nas rotas.
 
 `event-service`
 
 - Registro de eventos da caixa inteligente.
-- Publicacao de mensagens na fila `medibox.notifications`.
-- Publicacao em RabbitMQ apos persistir o evento no banco.
+- Publicação de mensagens na fila `medibox.notifications`.
+- Publicação em RabbitMQ após persistir o evento no banco.
+- Resumo simples de adesão por paciente com base nos eventos de dose.
 
 `notification-worker`
 
 - Consome mensagens do RabbitMQ.
-- Simula notificacoes por logs no terminal.
-- Nao expoe API HTTP nesta versao.
+- Simula notificações por logs no terminal.
+- Não expõe API HTTP nesta versão.
+- Diferencia notificações comuns de eventos críticos.
 
-## Como rodar com Docker Compose
+## Como Rodar com Docker Compose
 
 Na raiz do projeto:
 
@@ -62,26 +64,26 @@ Na raiz do projeto:
 docker compose up --build
 ```
 
-O Compose le variaveis de ambiente a partir de `.env.example`. Os valores desse arquivo sao exemplos para desenvolvimento local e apresentacao academica, nao segredos de producao.
+O Compose lê variáveis de ambiente a partir de `.env.example`. Os valores desse arquivo são exemplos para desenvolvimento local e apresentação acadêmica, não segredos de produção.
 
-Se quiser trocar credenciais ou URLs localmente, edite uma copia do arquivo e ajuste o `env_file` no `docker-compose.yml`:
+Se quiser trocar credenciais ou URLs localmente, edite uma cópia do arquivo e ajuste o `env_file` no `docker-compose.yml`:
 
 ```bash
 cp .env.example .env
 ```
 
-Para a validacao padrao do projeto, basta manter `.env.example` como esta.
+Para a validação padrão do projeto, basta manter `.env.example` como está.
 
 Depois acesse:
 
 - Gateway: http://localhost
 - RabbitMQ Management: http://localhost:15672
-- Usuario RabbitMQ: `medibox`
+- Usuário RabbitMQ: `medibox`
 - Senha RabbitMQ: `medibox`
 
-Se o comando falhar com erro de conexao no `dockerDesktopLinuxEngine`, abra o Docker Desktop e aguarde a engine Linux iniciar antes de rodar o Compose novamente.
+Se o comando falhar com erro de conexão no `dockerDesktopLinuxEngine`, abra o Docker Desktop e aguarde a engine Linux iniciar antes de rodar o Compose novamente.
 
-## Documentacao Swagger
+## Documentação Swagger
 
 Pelo gateway:
 
@@ -89,13 +91,13 @@ Pelo gateway:
 - Medications: http://localhost/medications/docs
 - Events: http://localhost/events/docs
 
-Portas diretas dos servicos:
+Portas diretas dos serviços:
 
 - Auth service: http://localhost:8001/auth/docs
 - Medication service: http://localhost:8002/medications/docs
 - Event service: http://localhost:8003/events/docs
 
-## Endpoints principais
+## Endpoints Principais
 
 Auth:
 
@@ -129,16 +131,33 @@ Events:
 POST /events
 GET  /events
 GET  /events/patient/{patient_id}
+GET  /patients/{patient_id}/adherence-summary
 GET  /health
 ```
 
-As rotas de pacientes, medicamentos, horarios e eventos exigem Bearer Token gerado pelo `auth-service`.
+As rotas de pacientes, medicamentos, horários e eventos exigem Bearer Token gerado pelo `auth-service`.
 
-As rotas `/health` dos servicos existem nas portas diretas. Pelo gateway, `http://localhost/health` valida o NGINX.
+As rotas `/health` dos serviços existem nas portas diretas. Pelo gateway, `http://localhost/health` valida o NGINX.
 
-## Fluxo rapido de teste
+## Regras de Negócio Atuais
 
-1. Cadastre um usuario:
+Resumo de adesão:
+
+- Endpoint: `GET /patients/{patient_id}/adherence-summary`.
+- Implementado no `event-service`, pois o cálculo depende dos eventos registrados pela caixa.
+- Retorna `total_events`, `doses_taken`, `doses_missed`, `doses_delayed` e `adherence_rate`.
+- A taxa de adesão usa a fórmula: `doses_taken / (doses_taken + doses_missed + doses_delayed) * 100`.
+- Eventos como `BOX_OPENED` e `ALERT_TRIGGERED` entram em `total_events`, mas não entram no denominador da taxa.
+
+Notificações críticas:
+
+- Eventos críticos: `DOSE_MISSED`, `DOSE_DELAYED`, `ALERT_TRIGGERED`.
+- O `notification-worker` registra logs prioritários para eventos críticos.
+- Os demais eventos geram notificações comuns simuladas.
+
+## Fluxo Rápido de Teste
+
+1. Cadastre um usuário:
 
 ```bash
 curl -X POST http://localhost/auth/register \
@@ -146,7 +165,7 @@ curl -X POST http://localhost/auth/register \
   -d "{\"name\":\"Ana Cuidadora\",\"email\":\"ana@example.com\",\"password\":\"123456\",\"role\":\"CAREGIVER\"}"
 ```
 
-2. Faca login e copie o `access_token`:
+2. Faça login e copie o `access_token`:
 
 ```bash
 curl -X POST http://localhost/auth/login \
@@ -161,11 +180,11 @@ curl -X GET http://localhost/patients \
   -H "Authorization: Bearer SEU_TOKEN"
 ```
 
-## Testes automatizados
+## Testes Automatizados
 
-Os testes usam `pytest` e `httpx` por meio do cliente de teste do FastAPI. Eles sao simples e validam os endpoints principais sem exigir PostgreSQL ou RabbitMQ reais: cada servico usa SQLite em memoria durante o teste, e o envio ao RabbitMQ e simulado no `event-service`.
+Os testes usam `pytest` e `httpx` por meio do cliente de teste do FastAPI. Eles são simples e validam os endpoints principais sem exigir PostgreSQL ou RabbitMQ reais: cada serviço usa SQLite em memória durante o teste, e o envio ao RabbitMQ é simulado no `event-service`.
 
-Como os servicos usam o mesmo nome de pacote Python (`app`), execute os testes por servico.
+Como os serviços usam o mesmo nome de pacote Python (`app`), execute os testes por serviço.
 
 Com Python local:
 
@@ -202,7 +221,7 @@ python -m pytest
 Pop-Location
 ```
 
-Tambem e possivel rodar pelos containers, depois de construir as imagens:
+Também é possível rodar pelos containers, depois de construir as imagens:
 
 ```bash
 docker compose build auth-service medication-service event-service
@@ -234,46 +253,54 @@ Exemplo de mensagem:
 O `notification-worker` consome essa fila e registra um log semelhante a:
 
 ```txt
-[NOTIFICATION] Paciente X gerou evento DOSE_MISSED. Alerta simulado enviado ao cuidador.
+[NOTIFICATION] Paciente X gerou evento DOSE_TAKEN. Notificação comum simulada registrada.
 ```
 
-## Banco e migrations
+Para eventos críticos, o log esperado segue o formato:
 
-O projeto usa PostgreSQL com um banco compartilhado para simplificar a apresentacao academica.
+```txt
+[CRITICAL NOTIFICATION] Paciente X gerou evento crítico DOSE_MISSED. Alerta prioritário simulado enviado ao cuidador.
+```
 
-Cada servico com banco possui seu proprio Alembic:
+## Banco e Migrations
+
+O projeto usa PostgreSQL com um banco compartilhado para simplificar a apresentação acadêmica.
+
+Cada serviço com banco possui seu próprio Alembic:
 
 - `services/auth-service/alembic`
 - `services/medication-service/alembic`
 - `services/event-service/alembic`
 
-Cada um usa uma tabela de versao propria, evitando conflito no banco compartilhado.
+Cada um usa uma tabela de versão própria, evitando conflito no banco compartilhado.
 
-Essa escolha reduz a complexidade operacional inicial. Em uma evolucao mais proxima de producao, cada servico poderia ter seu proprio banco.
+Essa escolha reduz a complexidade operacional inicial. Em uma evolução mais próxima de produção, cada serviço poderia ter seu próprio banco.
 
 ## Kubernetes
 
-Os manifests basicos ficam em:
+Os manifests básicos ficam em:
 
 ```txt
 infra/k8s/
 ```
 
-Arquivos incluidos:
+Arquivos incluídos:
 
 - namespace;
 - ConfigMap;
 - Secret de exemplo;
 - PostgreSQL;
 - RabbitMQ;
-- deployments dos servicos;
+- deployments dos serviços;
 - services internos;
 - NGINX gateway;
 - ingress.
 
-Antes de aplicar em um cluster real, copie `secret.example.yaml`, ajuste os segredos e publique as imagens Docker com nomes acessiveis ao cluster.
+Para validação local com Kind, consulte [docs/kind-validation.md](docs/kind-validation.md).
 
-Exemplo de aplicacao:
+Antes de aplicar em um cluster real, copie `secret.example.yaml`, ajuste os segredos e publique as imagens Docker com nomes acessíveis ao cluster.
+
+Exemplo de aplicação:
 
 ```bash
 kubectl apply -f infra/k8s/namespace.yaml
@@ -282,12 +309,11 @@ kubectl apply -f infra/k8s/secret.example.yaml
 kubectl apply -f infra/k8s/
 ```
 
-## Proximos passos possiveis
+## Próximos Passos Possíveis
 
-- Adicionar testes automatizados por servico.
-- Criar endpoints para solicitacao de mudanca de horario pelo paciente.
-- Adicionar autorizacao por papel em rotas sensiveis.
+- Criar endpoints para solicitação de mudança de horário pelo paciente.
+- Adicionar autorização por papel em rotas sensíveis.
 - Melhorar observabilidade com logs estruturados.
-- Separar bancos por servico em uma evolucao da arquitetura.
+- Separar bancos por serviço em uma evolução da arquitetura.
 - Criar pipeline CI/CD.
 - Evoluir os manifests Kubernetes para Helm quando fizer sentido.

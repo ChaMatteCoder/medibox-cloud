@@ -12,6 +12,8 @@ from app.core.config import settings
 
 logger = logging.getLogger(__name__)
 
+CRITICAL_EVENTS = {"DOSE_MISSED", "DOSE_DELAYED", "ALERT_TRIGGERED"}
+
 
 class NotificationConsumer:
     def start(self) -> None:
@@ -51,12 +53,20 @@ class NotificationConsumer:
             message: dict[str, Any] = json.loads(body.decode("utf-8"))
             patient_id = message.get("patient_id", "desconhecido")
             event_type = message.get("event_type", "UNKNOWN")
-            logger.info(
-                "[NOTIFICATION] Paciente %s gerou evento %s. "
-                "Alerta simulado enviado ao cuidador.",
-                patient_id,
-                event_type,
-            )
+            if event_type in CRITICAL_EVENTS:
+                logger.warning(
+                    "[CRITICAL NOTIFICATION] Paciente %s gerou evento critico %s. "
+                    "Alerta prioritario simulado enviado ao cuidador.",
+                    patient_id,
+                    event_type,
+                )
+            else:
+                logger.info(
+                    "[NOTIFICATION] Paciente %s gerou evento %s. "
+                    "Notificacao comum simulada registrada.",
+                    patient_id,
+                    event_type,
+                )
             channel.basic_ack(delivery_tag=method.delivery_tag)
         except Exception:
             logger.exception("Could not process notification message")

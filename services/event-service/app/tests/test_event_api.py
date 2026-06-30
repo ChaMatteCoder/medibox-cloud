@@ -95,3 +95,35 @@ def test_create_and_list_events(
     assert list_response.status_code == 200
     assert len(list_response.json()) == 1
     assert app.state.published_messages[0]["event_id"] == event["id"]
+
+
+def test_patient_adherence_summary(
+    client: TestClient,
+    auth_headers: dict[str, str],
+) -> None:
+    for event_type in ["DOSE_TAKEN", "DOSE_TAKEN", "DOSE_MISSED", "DOSE_DELAYED", "BOX_OPENED"]:
+        response = client.post(
+            "/events",
+            headers=auth_headers,
+            json={
+                "patient_id": "patient-1",
+                "medication_id": "medication-1",
+                "event_type": event_type,
+                "payload": {"source": "test"},
+            },
+        )
+        assert response.status_code == 201
+
+    response = client.get(
+        "/patients/patient-1/adherence-summary",
+        headers=auth_headers,
+    )
+
+    assert response.status_code == 200
+    assert response.json() == {
+        "total_events": 5,
+        "doses_taken": 2,
+        "doses_missed": 1,
+        "doses_delayed": 1,
+        "adherence_rate": 50.0,
+    }

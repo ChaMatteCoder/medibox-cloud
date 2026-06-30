@@ -2,7 +2,7 @@ import logging
 
 from fastapi import FastAPI
 
-from app.api.routes import events, health
+from app.api.routes import events, health, patients
 from app.core.config import settings
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s:%(name)s:%(message)s")
@@ -18,6 +18,7 @@ app = FastAPI(
 
 app.include_router(health.router)
 app.include_router(events.router, prefix="/events", tags=["events"])
+app.include_router(patients.router, prefix="/patients", tags=["adherence"])
 
 
 @app.get("/", include_in_schema=False)

@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
         - name: notification-worker
-          image: medibox/notification-worker:latest
+          image: medibox-notification-worker:local
           imagePullPolicy: IfNotPresent
           envFrom:
             - configMapRef:

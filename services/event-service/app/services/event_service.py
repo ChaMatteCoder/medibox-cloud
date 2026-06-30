@@ -2,10 +2,10 @@ import logging
 
 from sqlalchemy.orm import Session
 
-from app.db.models import DeviceEvent
+from app.db.models import DeviceEvent, DeviceEventType
 from app.messaging.rabbitmq import RabbitMQPublisher
 from app.repositories.event_repository import EventRepository
-from app.schemas.event import DeviceEventCreate
+from app.schemas.event import AdherenceSummary, DeviceEventCreate
 
 logger = logging.getLogger(__name__)
 
@@ -45,3 +45,29 @@ class EventService:
 
     def list_by_patient(self, patient_id: str) -> list[DeviceEvent]:
         return self.repository.list_by_patient(patient_id)
+
+    def get_adherence_summary(self, patient_id: str) -> AdherenceSummary:
+        events = self.repository.count_by_patient(patient_id)
+        doses_taken = self._count_events(events, DeviceEventType.DOSE_TAKEN)
+        doses_missed = self._count_events(events, DeviceEventType.DOSE_MISSED)
+        doses_delayed = self._count_events(events, DeviceEventType.DOSE_DELAYED)
+        dose_events = doses_taken + doses_missed + doses_delayed
+
+        adherence_rate = 0.0
+        if dose_events > 0:
+            adherence_rate = round((doses_taken / dose_events) * 100, 2)
+
+        return AdherenceSummary(
+            total_events=len(events),
+            doses_taken=doses_taken,
+            doses_missed=doses_missed,
+            doses_delayed=doses_delayed,
+            adherence_rate=adherence_rate,
+        )
+
+    def _count_events(
+        self,
+        events: list[DeviceEvent],
+        event_type: DeviceEventType,
+    ) -> int:
+        return sum(1 for event in events if event.event_type == event_type.value)

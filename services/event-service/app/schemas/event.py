@@ -24,3 +24,11 @@ class DeviceEventRead(BaseModel):
     created_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class AdherenceSummary(BaseModel):
+    total_events: int
+    doses_taken: int
+    doses_missed: int
+    doses_delayed: int
+    adherence_rate: float

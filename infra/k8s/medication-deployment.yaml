@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
         - name: medication-service
-          image: medibox/medication-service:latest
+          image: medibox-medication-service:local
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8000
@@ -33,3 +33,9 @@ spec:
               port: 8000
             initialDelaySeconds: 10
             periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 30
+            periodSeconds: 20
