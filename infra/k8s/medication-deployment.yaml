@@ -1,0 +1,35 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: medication-service
+  namespace: medibox
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: medication-service
+  template:
+    metadata:
+      labels:
+        app: medication-service
+    spec:
+      containers:
+        - name: medication-service
+          image: medibox/medication-service:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8000
+          command: ["sh", "-c"]
+          args:
+            - alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000
+          envFrom:
+            - configMapRef:
+                name: medibox-config
+            - secretRef:
+                name: medibox-secret
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 10
+            periodSeconds: 10
