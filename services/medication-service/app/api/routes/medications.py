@@ -27,7 +27,7 @@ def list_medications(
     _: dict[str, Any] = Depends(get_current_user),
     db: Session = Depends(get_db),
 ) -> list[Medication]:
-    return MedicationService(db).list(patient_id=patient_id)
+    return MedicationService(db).list_all(patient_id=patient_id)
 
 
 @router.get("/{medication_id}", response_model=MedicationRead)

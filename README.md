@@ -4,6 +4,8 @@ MediBox Cloud e uma base backend academica para controle inteligente de medicame
 
 O foco e demonstrar uma arquitetura backend simples, modular e explicavel usando Python, FastAPI, PostgreSQL, SQLAlchemy, Alembic, JWT, RabbitMQ, Docker Compose, NGINX e uma base inicial para Kubernetes.
 
+Esta base evita funcionalidades fora do escopo para manter o projeto legivel em uma apresentacao de Arquitetura de Software Aplicada.
+
 ## Arquitetura
 
 ```txt
@@ -31,22 +33,26 @@ medibox-cloud/
 - Login com JWT.
 - Endpoint `/auth/me`.
 - Papeis: `ADMIN`, `CAREGIVER`, `PATIENT`.
+- Camadas internas: routes, schemas, models, repositories e services.
 
 `medication-service`
 
 - Cadastro e consulta de pacientes.
 - Cadastro e consulta de medicamentos.
 - Cadastro e consulta de horarios por paciente.
+- Regras de aplicacao concentradas em services, nao nas rotas.
 
 `event-service`
 
 - Registro de eventos da caixa inteligente.
 - Publicacao de mensagens na fila `medibox.notifications`.
+- Publicacao em RabbitMQ apos persistir o evento no banco.
 
 `notification-worker`
 
 - Consome mensagens do RabbitMQ.
 - Simula notificacoes por logs no terminal.
+- Nao expoe API HTTP nesta versao.
 
 ## Como rodar com Docker Compose
 
@@ -56,11 +62,15 @@ Na raiz do projeto:
 docker compose up --build
 ```
 
-O Compose usa valores padrao equivalentes aos de `.env.example`. Para um ambiente local editavel, crie um `.env` a partir do exemplo:
+O Compose le variaveis de ambiente a partir de `.env.example`. Os valores desse arquivo sao exemplos para desenvolvimento local e apresentacao academica, nao segredos de producao.
+
+Se quiser trocar credenciais ou URLs localmente, edite uma copia do arquivo e ajuste o `env_file` no `docker-compose.yml`:
 
 ```bash
 cp .env.example .env
 ```
+
+Para a validacao padrao do projeto, basta manter `.env.example` como esta.
 
 Depois acesse:
 
@@ -68,6 +78,8 @@ Depois acesse:
 - RabbitMQ Management: http://localhost:15672
 - Usuario RabbitMQ: `medibox`
 - Senha RabbitMQ: `medibox`
+
+Se o comando falhar com erro de conexao no `dockerDesktopLinuxEngine`, abra o Docker Desktop e aguarde a engine Linux iniciar antes de rodar o Compose novamente.
 
 ## Documentacao Swagger
 
@@ -79,7 +91,7 @@ Pelo gateway:
 
 Portas diretas dos servicos:
 
-- Auth service: http://localhost:8001/docs nao e usado; use http://localhost:8001/auth/docs
+- Auth service: http://localhost:8001/auth/docs
 - Medication service: http://localhost:8002/medications/docs
 - Event service: http://localhost:8003/events/docs
 
@@ -122,6 +134,8 @@ GET  /health
 
 As rotas de pacientes, medicamentos, horarios e eventos exigem Bearer Token gerado pelo `auth-service`.
 
+As rotas `/health` dos servicos existem nas portas diretas. Pelo gateway, `http://localhost/health` valida o NGINX.
+
 ## Fluxo rapido de teste
 
 1. Cadastre um usuario:
@@ -145,6 +159,56 @@ curl -X POST http://localhost/auth/login \
 ```bash
 curl -X GET http://localhost/patients \
   -H "Authorization: Bearer SEU_TOKEN"
+```
+
+## Testes automatizados
+
+Os testes usam `pytest` e `httpx` por meio do cliente de teste do FastAPI. Eles sao simples e validam os endpoints principais sem exigir PostgreSQL ou RabbitMQ reais: cada servico usa SQLite em memoria durante o teste, e o envio ao RabbitMQ e simulado no `event-service`.
+
+Como os servicos usam o mesmo nome de pacote Python (`app`), execute os testes por servico.
+
+Com Python local:
+
+```bash
+cd services/auth-service
+python -m pip install -r requirements.txt
+python -m pytest
+
+cd ../medication-service
+python -m pip install -r requirements.txt
+python -m pytest
+
+cd ../event-service
+python -m pip install -r requirements.txt
+python -m pytest
+```
+
+Com PowerShell, a partir da raiz:
+
+```powershell
+Push-Location services/auth-service
+python -m pip install -r requirements.txt
+python -m pytest
+Pop-Location
+
+Push-Location services/medication-service
+python -m pip install -r requirements.txt
+python -m pytest
+Pop-Location
+
+Push-Location services/event-service
+python -m pip install -r requirements.txt
+python -m pytest
+Pop-Location
+```
+
+Tambem e possivel rodar pelos containers, depois de construir as imagens:
+
+```bash
+docker compose build auth-service medication-service event-service
+docker compose run --rm --no-deps auth-service pytest
+docker compose run --rm --no-deps medication-service pytest
+docker compose run --rm --no-deps event-service pytest
 ```
 
 ## RabbitMQ
@@ -184,6 +248,8 @@ Cada servico com banco possui seu proprio Alembic:
 - `services/event-service/alembic`
 
 Cada um usa uma tabela de versao propria, evitando conflito no banco compartilhado.
+
+Essa escolha reduz a complexidade operacional inicial. Em uma evolucao mais proxima de producao, cada servico poderia ter seu proprio banco.
 
 ## Kubernetes
 

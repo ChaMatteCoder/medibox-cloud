@@ -26,7 +26,7 @@ def list_patients(
     _: dict[str, Any] = Depends(get_current_user),
     db: Session = Depends(get_db),
 ) -> list[Patient]:
-    return PatientService(db).list()
+    return PatientService(db).list_all()
 
 
 @router.get("/{patient_id}", response_model=PatientRead)

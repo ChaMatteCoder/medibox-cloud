@@ -44,7 +44,7 @@ class NotificationConsumer:
         self,
         channel: BlockingChannel,
         method: Basic.Deliver,
-        properties: BasicProperties,
+        _properties: BasicProperties,
         body: bytes,
     ) -> None:
         try:

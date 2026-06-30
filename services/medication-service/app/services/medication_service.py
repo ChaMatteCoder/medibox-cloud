@@ -28,8 +28,8 @@ class MedicationService:
         )
         return self.repository.create(medication)
 
-    def list(self, patient_id: str | None = None) -> list[Medication]:
-        return self.repository.list(patient_id=patient_id)
+    def list_all(self, patient_id: str | None = None) -> list[Medication]:
+        return self.repository.list_all(patient_id=patient_id)
 
     def get(self, medication_id: str) -> Medication:
         medication = self.repository.get(medication_id)

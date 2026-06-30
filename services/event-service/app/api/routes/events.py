@@ -26,7 +26,7 @@ def list_events(
     _: dict[str, Any] = Depends(get_current_user),
     db: Session = Depends(get_db),
 ) -> list[DeviceEvent]:
-    return EventService(db).list()
+    return EventService(db).list_all()
 
 
 @router.get("/patient/{patient_id}", response_model=list[DeviceEventRead])

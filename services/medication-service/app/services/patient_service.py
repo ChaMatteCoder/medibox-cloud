@@ -18,8 +18,8 @@ class PatientService:
         )
         return self.repository.create(patient)
 
-    def list(self) -> list[Patient]:
-        return self.repository.list()
+    def list_all(self) -> list[Patient]:
+        return self.repository.list_all()
 
     def get(self, patient_id: str) -> Patient:
         patient = self.repository.get(patient_id)

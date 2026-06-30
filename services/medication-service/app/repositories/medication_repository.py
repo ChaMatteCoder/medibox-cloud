@@ -14,7 +14,7 @@ class MedicationRepository:
         self.db.refresh(medication)
         return medication
 
-    def list(self, patient_id: str | None = None) -> list[Medication]:
+    def list_all(self, patient_id: str | None = None) -> list[Medication]:
         statement = select(Medication).order_by(Medication.created_at.desc())
         if patient_id:
             statement = statement.where(Medication.patient_id == patient_id)

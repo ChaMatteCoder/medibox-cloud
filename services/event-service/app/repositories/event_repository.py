@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -16,7 +14,7 @@ class EventRepository:
         self.db.refresh(event)
         return event
 
-    def list(self) -> list[DeviceEvent]:
+    def list_all(self) -> list[DeviceEvent]:
         statement = select(DeviceEvent).order_by(DeviceEvent.occurred_at.desc())
         return list(self.db.scalars(statement).all())
 

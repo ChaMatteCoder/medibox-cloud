@@ -14,7 +14,7 @@ class PatientRepository:
         self.db.refresh(patient)
         return patient
 
-    def list(self) -> list[Patient]:
+    def list_all(self) -> list[Patient]:
         statement = select(Patient).order_by(Patient.created_at.desc())
         return list(self.db.scalars(statement).all())
 

@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import logging
 
 from sqlalchemy.orm import Session
@@ -42,8 +40,8 @@ class EventService:
 
         return event
 
-    def list(self) -> list[DeviceEvent]:
-        return self.repository.list()
+    def list_all(self) -> list[DeviceEvent]:
+        return self.repository.list_all()
 
     def list_by_patient(self, patient_id: str) -> list[DeviceEvent]:
         return self.repository.list_by_patient(patient_id)

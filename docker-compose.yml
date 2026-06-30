@@ -2,16 +2,14 @@ services:
   postgres:
     image: postgres:16-alpine
     container_name: medibox-postgres
-    environment:
-      POSTGRES_USER: ${POSTGRES_USER:-medibox}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-medibox}
-      POSTGRES_DB: ${POSTGRES_DB:-medibox_cloud}
+    env_file:
+      - .env.example
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-medibox} -d ${POSTGRES_DB:-medibox_cloud}"]
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -19,9 +17,8 @@ services:
   rabbitmq:
     image: rabbitmq:3-management-alpine
     container_name: medibox-rabbitmq
-    environment:
-      RABBITMQ_DEFAULT_USER: ${RABBITMQ_DEFAULT_USER:-medibox}
-      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_DEFAULT_PASS:-medibox}
+    env_file:
+      - .env.example
     ports:
       - "5672:5672"
       - "15672:15672"
@@ -37,11 +34,6 @@ services:
     container_name: medibox-auth-service
     env_file:
       - .env.example
-    environment:
-      DATABASE_URL: ${DATABASE_URL:-postgresql+psycopg2://medibox:medibox@postgres:5432/medibox_cloud}
-      JWT_SECRET_KEY: ${JWT_SECRET_KEY:-change-me-in-production}
-      JWT_ALGORITHM: ${JWT_ALGORITHM:-HS256}
-      JWT_ACCESS_TOKEN_EXPIRE_MINUTES: ${JWT_ACCESS_TOKEN_EXPIRE_MINUTES:-60}
     ports:
       - "8001:8000"
     depends_on:
@@ -59,10 +51,6 @@ services:
     container_name: medibox-medication-service
     env_file:
       - .env.example
-    environment:
-      DATABASE_URL: ${DATABASE_URL:-postgresql+psycopg2://medibox:medibox@postgres:5432/medibox_cloud}
-      JWT_SECRET_KEY: ${JWT_SECRET_KEY:-change-me-in-production}
-      JWT_ALGORITHM: ${JWT_ALGORITHM:-HS256}
     ports:
       - "8002:8000"
     depends_on:
@@ -82,11 +70,6 @@ services:
     container_name: medibox-event-service
     env_file:
       - .env.example
-    environment:
-      DATABASE_URL: ${DATABASE_URL:-postgresql+psycopg2://medibox:medibox@postgres:5432/medibox_cloud}
-      JWT_SECRET_KEY: ${JWT_SECRET_KEY:-change-me-in-production}
-      JWT_ALGORITHM: ${JWT_ALGORITHM:-HS256}
-      RABBITMQ_URL: ${RABBITMQ_URL:-amqp://medibox:medibox@rabbitmq:5672/}
     ports:
       - "8003:8000"
     depends_on:
@@ -106,8 +89,6 @@ services:
     container_name: medibox-notification-worker
     env_file:
       - .env.example
-    environment:
-      RABBITMQ_URL: ${RABBITMQ_URL:-amqp://medibox:medibox@rabbitmq:5672/}
     depends_on:
       rabbitmq:
         condition: service_healthy
